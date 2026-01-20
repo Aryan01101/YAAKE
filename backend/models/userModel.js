@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, index: true },
     password: { type: String, required: true },
     role: { type: String, default: "applicant" },
+    companyName: { type: String, index: true }, // Company name for recruiters
+    companyId: { type: String }, // For future company grouping
     isVerified: { type: Boolean, default: false },
     verificationToken: { type: String, default: null },
   },
@@ -20,5 +22,5 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-const User = mongoose.model("Users", userSchema, "users");
+const User = mongoose.model("User", userSchema, "users");
 module.exports = User;
