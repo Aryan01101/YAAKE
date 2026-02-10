@@ -10,7 +10,6 @@ const InterviewSession = ({ interviewData, onFinishInterview }) => {
   const [error, setError] = useState('');
   const [conversationHistory, setConversationHistory] = useState([]);
   const [isComplete, setIsComplete] = useState(false);
-  const [completionMessage, setCompletionMessage] = useState('');
 
   const conversationEndRef = useRef(null);
   const answerInputRef = useRef(null);
@@ -84,7 +83,6 @@ const InterviewSession = ({ interviewData, onFinishInterview }) => {
       if (data.data.isComplete) {
         // Interview is complete
         setIsComplete(true);
-        setCompletionMessage(data.data.acknowledgment || data.data.message);
         setConversationHistory([
           ...newConversation,
           {

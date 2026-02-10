@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { outreachAPI } from '../../services/api';
-import { notifySuccess, notifyError, notifyInfo } from '../../services/notification.service';
+import { notifySuccess, notifyError } from '../../services/notification.service';
 
 const ColdOutreach = () => {
   const [outreachEmails, setOutreachEmails] = useState([]);
@@ -23,11 +23,7 @@ const ColdOutreach = () => {
   const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
 
-  useEffect(() => {
-    fetchOutreachEmails();
-  }, [filterStatus]);
-
-  const fetchOutreachEmails = async () => {
+  const fetchOutreachEmails = useCallback(async () => {
     setLoading(true);
     try {
       const status = filterStatus === 'all' ? null : filterStatus;
@@ -38,7 +34,11 @@ const ColdOutreach = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterStatus]);
+
+  useEffect(() => {
+    fetchOutreachEmails();
+  }, [fetchOutreachEmails]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
