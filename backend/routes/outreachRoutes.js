@@ -39,8 +39,8 @@ const regenerateLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// All routes require authentication and email verification
-router.use(protect, requireVerification);
+// All routes require authentication (email verification disabled for testing)
+router.use(protect);
 
 // Generate new outreach email (with AI)
 router.post('/generate', generateLimiter, generateEmail);

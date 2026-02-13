@@ -42,6 +42,10 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Trust proxy - needed for Render.com and other reverse proxies
+// This allows Express to trust X-Forwarded-* headers for correct client IP detection
+app.set('trust proxy', 1);
+
 // Rate limiting (NFR: Performance optimization)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
