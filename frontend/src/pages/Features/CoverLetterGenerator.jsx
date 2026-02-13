@@ -210,9 +210,6 @@ const CoverLetterGenerator = () => {
       <div className="max-w-6xl mx-auto">
         <Toaster position="top-right" />
         <div className="mb-8">
-          <div className="inline-block px-4 py-1 bg-purple-100 text-purple-700 text-sm font-semibold rounded-full mb-4">
-            Use Case 2 (UC3)
-          </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Cover Letter Generator</h1>
           <p className="text-lg text-gray-600 max-w-3xl">Upload your resume, optionally paste the job description, choose a style, and generate/refine an ATS-friendly cover letter.</p>
         </div>

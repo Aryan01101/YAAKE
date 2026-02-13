@@ -28,9 +28,14 @@ const ColdOutreach = () => {
     try {
       const status = filterStatus === 'all' ? null : filterStatus;
       const emails = await outreachAPI.getOutreachEmails(status);
-      setOutreachEmails(emails);
+      setOutreachEmails(emails || []);
     } catch (error) {
-      notifyError('Failed to fetch outreach emails');
+      // Don't show error for empty results - just set empty array
+      setOutreachEmails([]);
+      // Only show error if it's a real server error (not 404 or empty)
+      if (error.response && error.response.status !== 404) {
+        notifyError('Failed to fetch outreach emails');
+      }
     } finally {
       setLoading(false);
     }
