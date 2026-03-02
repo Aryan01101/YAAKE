@@ -74,14 +74,17 @@ const validateCsrfToken = (req, res, next) => {
     return next();
   }
 
-  // Skip CSRF check for public authentication endpoints
-  // These endpoints are first-contact points where users don't have tokens yet
+  // Skip CSRF check for public authentication endpoints and guest-specific operations
+  // Public endpoints: first-contact points where users don't have tokens yet
+  // Guest operations: Protected by JWT + requireGuest, but CSRF causes timing issues with cross-origin requests
   const publicEndpoints = [
     '/api/auth/register',
     '/api/auth/login',
     '/api/auth/guest-register',
     '/api/auth/verify-email',
     '/api/auth/resend-verification',
+    '/api/auth/switch-role',      // Guest-only: JWT + requireGuest protected
+    '/api/auth/upgrade-guest',     // Guest-only: JWT + requireGuest protected
   ];
   if (publicEndpoints.some(endpoint => req.originalUrl.startsWith(endpoint))) {
     logger.debug('CSRF validation skipped for public endpoint', {
