@@ -1,8 +1,19 @@
 import axios from "axios";
 
 // API base URL
-
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5001/api";
+
+// Validate environment configuration
+if (!process.env.REACT_APP_API_BASE_URL && process.env.NODE_ENV === 'production') {
+  console.error(
+    '🚨 PRODUCTION ERROR: REACT_APP_API_BASE_URL environment variable is not set!\n' +
+    'The app is using the default localhost URL which will fail in production.\n' +
+    'Please configure REACT_APP_API_BASE_URL in your deployment environment.'
+  );
+}
+
+// Export for health checks and debugging
+export const getAPIBaseURL = () => API_BASE_URL;
 
 // Create axios instance
 const api = axios.create({
