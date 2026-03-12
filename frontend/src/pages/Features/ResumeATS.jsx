@@ -81,7 +81,28 @@ const ResumeATS = () => {
       }
     } catch (err) {
       console.error('ATS scoring error:', err);
-      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to score resume. Please try again.');
+
+      // Extract error message from various possible locations
+      let errorMessage = 'Failed to score resume. Please try again.';
+
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      // Provide user-friendly messages for specific errors
+      if (errorMessage.includes('quota') || errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
+        errorMessage = '⚠️ API quota exhausted. The service is currently in demo mode. Please contact support or try again later.';
+      } else if (errorMessage.includes('timeout')) {
+        errorMessage = '⏱️ Request timed out. The backend may be starting up (cold start). Please try again in 30 seconds.';
+      } else if (errorMessage.includes('Network Error')) {
+        errorMessage = '🌐 Cannot connect to server. Please check your internet connection or try again later.';
+      }
+
+      setError(errorMessage);
     } finally {
       setUploading(false);
     }

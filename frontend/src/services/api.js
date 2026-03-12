@@ -22,7 +22,7 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
   withCredentials: true, // May be needed for future cookie-based features
-  timeout: 30000, // 30 seconds timeout (reduced from 70s for better UX)
+  timeout: 60000, // 60 seconds timeout - accommodate Render free tier cold starts (30-60s)
 });
 
 // Request interceptor - add JWT authentication token

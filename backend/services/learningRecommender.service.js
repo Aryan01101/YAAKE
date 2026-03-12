@@ -1,5 +1,6 @@
 const Course = require('../models/courseModel');
 const { generateJson } = require('./llm.service');
+const { isDemoMode, mockLearningPath, getDemoModeMessage } = require('./demoResponses');
 
 /**
  * Utility: normalize strings for keyword matching
@@ -137,6 +138,12 @@ async function recommendLearningPath({ resumeText, jobDescription, targetRole, r
     const err = new Error('resumeText and (jobDescription or targetRole) are required');
     err.status = 400;
     throw err;
+  }
+
+  // Check if demo mode is enabled
+  if (isDemoMode()) {
+    console.log(getDemoModeMessage());
+    return mockLearningPath({ targetRole });
   }
 
   // 1) Analyze skills

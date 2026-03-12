@@ -1,4 +1,5 @@
 const AgenticAI = require('./agenticAI');
+const { isDemoMode, mockInterviewQuestions, getDemoModeMessage } = require('./demoResponses');
 require('dotenv').config();
 
 // Initialize AI agent
@@ -53,6 +54,13 @@ async function generateInterviewQuestions(context) {
     numberOfQuestions = 10,
     candidateResume = ''
   } = context;
+
+  // Check if demo mode is enabled
+  if (isDemoMode()) {
+    console.log(getDemoModeMessage());
+    const mockData = mockInterviewQuestions({ role: jobTitle, experienceLevel });
+    return mockData.questions;
+  }
 
   const skillsList = Array.isArray(requiredSkills) ? requiredSkills.join(', ') : requiredSkills;
   const categoriesList = Array.isArray(categories) ? categories.join(', ') : categories;

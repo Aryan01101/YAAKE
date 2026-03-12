@@ -1,19 +1,25 @@
 // File: backend/services/atsService.js
 // ATS Scoring Service using Google Gemini API
 
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { isDemoMode, mockATSScore, getDemoModeMessage } = require('./demoResponses');
 require('dotenv').config();
 
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY
-});
+// Initialize Gemini API only if not in demo mode and API key exists
+let genAI = null;
+if (!isDemoMode() && process.env.GEMINI_API_KEY) {
+  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+}
 
 class ATSService {
   constructor() {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error('❌ GEMINI_API_KEY not found in .env');
+    if (isDemoMode()) {
+      console.log('🎭 ATSService initialized in DEMO MODE - using mock responses');
+    } else if (!process.env.GEMINI_API_KEY) {
+      console.warn('⚠️ GEMINI_API_KEY not found - set DEMO_MODE=true to use mock responses');
+    } else {
+      console.log('✅ ATSService initialized with Gemini API');
     }
-    console.log('✅ ATSService initialized with Gemini API');
   }
 
   /**
@@ -40,6 +46,61 @@ class ATSService {
       console.log('\n🎯 Starting ATS Scoring Analysis...');
       console.log(`📄 Resume length: ${resumeText.length} characters`);
       console.log(`📋 Job description length: ${jobDescription.length} characters`);
+
+      // Check if demo mode is enabled
+      if (isDemoMode()) {
+        console.log(getDemoModeMessage());
+        const mockData = mockATSScore(resumeText, jobDescription);
+
+        // Transform mock data to match expected format
+        return {
+          success: true,
+          overall_score: mockData.overallScore,
+          grade: this.calculateGrade(mockData.overallScore),
+          category_scores: {
+            keyword_matching: {
+              score: mockData.breakdown.keywordMatching,
+              weight: 25,
+              feedback: mockData.keywords.matched.length > 0
+                ? `Found ${mockData.keywords.matched.length} relevant keywords`
+                : 'Limited keyword matching',
+              matched_keywords: mockData.keywords.matched,
+              missing_keywords: mockData.keywords.missing
+            },
+            format_structure: {
+              score: mockData.breakdown.formatStructure,
+              weight: 25,
+              feedback: mockData.formatAnalysis.strengths.join('. '),
+              strengths: mockData.formatAnalysis.strengths,
+              issues: mockData.formatAnalysis.issues
+            },
+            experience_relevance: {
+              score: mockData.breakdown.experienceRelevance,
+              weight: 25,
+              feedback: mockData.strengths[0],
+              relevant_experiences: mockData.strengths.slice(0, 3),
+              gaps: mockData.improvements.slice(0, 2)
+            },
+            skills_gap: {
+              score: mockData.breakdown.skillsGapAnalysis,
+              weight: 25,
+              feedback: `${mockData.keywords.matched.length} skills matched, ${mockData.keywords.missing.length} to add`,
+              present_skills: mockData.keywords.matched,
+              missing_skills: mockData.keywords.missing,
+              recommended_additions: mockData.keywords.suggestions
+            }
+          },
+          detailed_feedback: mockData.strengths.join(' ') + ' ' + mockData.improvements.join(' '),
+          recommendations: mockData.recommendations,
+          ats_compatibility_notes: 'Demo Mode: Resume format appears ATS-friendly',
+          analysis_metadata: {
+            timestamp: new Date().toISOString(),
+            mode: 'DEMO',
+            resume_length: resumeText.length,
+            job_description_length: jobDescription.length
+          }
+        };
+      }
 
       const prompt = `
 You are an expert ATS (Applicant Tracking System) analyzer. Analyze this resume against the job description and provide a comprehensive scoring report.
@@ -101,11 +162,15 @@ IMPORTANT:
 - Return ONLY the JSON object
 `;
 
-      const result = await genAI.models.generateContent({
-        model: 'gemini-2.0-flash-001',
-        contents: prompt
+      // Get the generative model
+      const model = genAI.getGenerativeModel({
+        model: process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite'
       });
-      let text = result.text.trim();
+
+      // Generate content
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      let text = response.text().trim();
 
       // Clean up response (remove markdown code blocks if present)
       if (text.startsWith('```')) {
@@ -185,6 +250,20 @@ IMPORTANT:
 
     } catch (error) {
       console.error('❌ ATS Scoring error:', error.message);
+
+      // Handle specific error types
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Gemini API quota exhausted. Please try again later or enable DEMO_MODE=true for demo purposes.');
+      }
+
+      if (error.message && error.message.includes('quota')) {
+        throw new Error('Gemini API quota limit reached. Set DEMO_MODE=true environment variable to use demo responses, or wait for quota reset.');
+      }
+
+      if (error.message && error.message.includes('RESOURCE_EXHAUSTED')) {
+        throw new Error('API quota exceeded. Enable DEMO_MODE=true for testing without API calls.');
+      }
+
       throw new Error(`ATS scoring failed: ${error.message}`);
     }
   }

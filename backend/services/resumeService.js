@@ -6,22 +6,28 @@ const path = require("path");
 const { PDFParse } = require("pdf-parse");
 const PDFDocument = require('pdfkit');
 const mammoth = require("mammoth");
-const { GoogleGenAI } = require("@google/genai");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { isDemoMode, mockResumeTranslation, getDemoModeMessage } = require('./demoResponses');
 require("dotenv").config();
 const AgenticAI = require("./agenticAI");
 
 let agent = new AgenticAI();
 
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+// Initialize Gemini API only if not in demo mode and API key exists
+let genAI = null;
+if (!isDemoMode() && process.env.GEMINI_API_KEY) {
+  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+}
 
 class ResumeService {
   constructor() {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error("❌ GEMINI_API_KEY not found in .env");
+    if (isDemoMode()) {
+      console.log("🎭 ResumeService initialized in DEMO MODE - using mock responses");
+    } else if (!process.env.GEMINI_API_KEY) {
+      console.warn("⚠️ GEMINI_API_KEY not found - set DEMO_MODE=true to use mock responses");
+    } else {
+      console.log("✅ ResumeService initialized with Gemini API");
     }
-    console.log("✅ ResumeService initialized with Gemini API");
   }
 
   /**
@@ -357,11 +363,15 @@ ${section}`;
         Return ONLY the JSON object. No markdown, no code blocks.
       `;
 
-      const result = await genAI.models.generateContent({
-        model: "gemini-2.0-flash-001",
-        contents: prompt,
+      // Get the generative model
+      const model = genAI.getGenerativeModel({
+        model: process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite'
       });
-      const text = result.text.trim();
+
+      // Generate content
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text().trim();
 
       let cleanText = text;
       if (cleanText.startsWith("```")) {
@@ -408,11 +418,15 @@ ${section}`;
         }
       `;
 
-      const result = await genAI.models.generateContent({
-        model: "gemini-2.0-flash-001",
-        contents: prompt,
+      // Get the generative model
+      const model = genAI.getGenerativeModel({
+        model: process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite'
       });
-      let text = result.text.trim();
+
+      // Generate content
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      let text = response.text().trim();
 
       if (text.startsWith("```")) {
         text = text.split("```")[1];

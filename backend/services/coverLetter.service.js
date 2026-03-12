@@ -1,4 +1,5 @@
 const { generateJson } = require('./llm.service');
+const { isDemoMode, mockCoverLetter, getDemoModeMessage } = require('./demoResponses');
 
 // Init banner (similar to other services)
 let __cl_init_logged = false;
@@ -65,6 +66,32 @@ function uniq(arr = []) {
 }
 
 async function generateCoverLetters({ resumeText, jobDescriptionText = '', style = 'formal', length = 'standard', userNotes = '', maxWords: inputMaxWords }) {
+  // Check if demo mode is enabled
+  if (isDemoMode()) {
+    console.log(getDemoModeMessage());
+    const mockData = mockCoverLetter({ jobTitle: 'Software Engineer', companyName: 'ACME Corp', style });
+
+    return {
+      drafts: [{
+        id: 'demo-' + Date.now(),
+        tone: style,
+        title: `${style.charAt(0).toUpperCase() + style.slice(1)} Cover Letter`,
+        body: mockData.coverLetter,
+        wordCount: computeWordCount(mockData.coverLetter),
+        alignmentScore: 85,
+        keywordCoverage: ['JavaScript', 'React', 'Node.js', 'Problem-solving', 'Team collaboration'],
+        justification: 'Demo mode: Pre-generated cover letter matching requested style'
+      }],
+      extractedResumeFacts: {
+        skills: ['JavaScript', 'Python', 'React', 'Node.js'],
+        achievements: ['Led team of 5 developers', '40% performance improvement'],
+        tools: ['Git', 'AWS', 'Docker']
+      },
+      extractedJDKeywords: ['JavaScript', 'React', 'Node.js', 'Agile', 'Cloud'],
+      warnings: ['Demo Mode Active: Using mock response']
+    };
+  }
+
   const maxWords = inputMaxWords && Number.isFinite(inputMaxWords) ? Math.max(120, Math.min(800, Math.floor(inputMaxWords))) : (length === 'short' ? 220 : 380);
   const minWords = Math.max(120, Math.floor(maxWords * 0.85));
   const tones = [style];
