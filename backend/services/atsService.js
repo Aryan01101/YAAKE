@@ -164,7 +164,7 @@ IMPORTANT:
 
       // Get the generative model
       const model = genAI.getGenerativeModel({
-        model: process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite'
+        model: process.env.GEMINI_MODEL || 'gemini-1.5-flash' // Free tier default
       });
 
       // Generate content
